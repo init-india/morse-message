@@ -93,10 +93,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
-        // A screen flash can't be seen once the app is in the background, so stop it.
-        // Sound, vibration and flashlight keep going until the message ends or Stop is pressed.
-        val state = app.player.state.value
-        if (state.playing && state.screenFlash) app.player.stop()
+        // Leaving the app (home button, switching apps, screen off) stops any Morse playing.
+        app.player.stop()
     }
 
     private fun handleIntent(intent: Intent?) {
@@ -138,6 +136,8 @@ private fun MainScaffold(tab: Tab, onTab: (Tab) -> Unit, sharedText: String, nav
     val playback by app.player.state.collectAsStateWithLifecycle()
     // An open chat gets the whole screen, like other messaging apps.
     val inChat = tab == Tab.MESSAGES && (nav.openAddress != null || nav.composingNew)
+    // Switching tabs stops any Morse that is playing.
+    LaunchedEffect(tab) { app.player.stop() }
 
     Box(Modifier.fillMaxSize()) {
         Scaffold(

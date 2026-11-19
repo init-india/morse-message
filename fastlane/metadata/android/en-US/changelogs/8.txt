@@ -1,0 +1,1 @@
+One Play/Pause/Resume button per Morse message; Back, leaving the chat, switching tabs or leaving the app stops the beeping. "Set as default" now opens Default apps if Android refuses, with a help dialog.

@@ -52,6 +52,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -251,12 +252,18 @@ private fun ThreadScreen(address: String, initialDraft: String, isDefault: Boole
     val repo = app.sms
     val settings by app.settings.settings.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    BackHandler(onBack = onBack)
+    BackHandler {
+        app.player.stop()
+        onBack()
+    }
 
     var messages by remember(address) { mutableStateOf<List<SmsMessage>>(emptyList()) }
     // Names always come from the contact list as saved; they are never converted.
     val name = remember(address) { repo.nameFor(address) }
     var text by rememberSaveable(address) { mutableStateOf(initialDraft) }
+    val playback by app.player.state.collectAsStateWithLifecycle()
+    // Leaving the chat (back button or anything else) stops any Morse that is playing.
+    DisposableEffect(address) { onDispose { app.player.stop() } }
     var lastConversion by remember(address) { mutableStateOf<Pair<String, String>?>(null) }
 
     LaunchedEffect(address) {
@@ -291,7 +298,12 @@ private fun ThreadScreen(address: String, initialDraft: String, isDefault: Boole
                 Bubble(
                     message = m,
                     morseMode = settings.morseMode,
-                    onPlay = { morse -> app.player.playMorse(morse, app.settings.current) },
+                    playState = when {
+                        playback.playing && playback.source == MessageText.playable(m.body) -> PlayState.PLAYING
+                        playback.paused && playback.source == MessageText.playable(m.body) -> PlayState.PAUSED
+                        else -> PlayState.IDLE
+                    },
+                    onPlay = { morse -> app.player.toggle(morse, isMorse = true, settings = app.settings.current) },
                     onRetry = { scope.launch(Dispatchers.IO) { repo.retry(m) } },
                     onDelete = { scope.launch(Dispatchers.IO) { repo.deleteMessage(m.id) } },
                 )
@@ -332,6 +344,7 @@ private fun ThreadScreen(address: String, initialDraft: String, isDefault: Boole
 private fun Bubble(
     message: SmsMessage,
     morseMode: Boolean,
+    playState: PlayState,
     onPlay: (String) -> Unit,
     onRetry: () -> Unit,
     onDelete: () -> Unit,
@@ -357,9 +370,16 @@ private fun Bubble(
                 )
                 // Play: always for messages that arrived / went out in Morse; in Morse mode for any English text.
                 if (playable != null && (morseMode || isMorseMessage)) {
+                    // One button: ▶ Play → ⏸ Pause → ▶ Resume
                     TextButton(onClick = { onPlay(playable) }, contentPadding = PaddingValues(horizontal = 4.dp)) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, Modifier.size(18.dp))
-                        Text("Play")
+                        Text(
+                            when (playState) {
+                                PlayState.IDLE -> "▶ Play"
+                                PlayState.PLAYING -> "⏸ Pause"
+                                PlayState.PAUSED -> "▶ Resume"
+                            },
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 }
                 Text(
@@ -604,6 +624,8 @@ private object MorseSymbols : VisualTransformation {
     override fun filter(text: AnnotatedString): TransformedText =
         TransformedText(AnnotatedString(text.text.replace('.', '·').replace('-', '−')), OffsetMapping.Identity)
 }
+
+private enum class PlayState { IDLE, PLAYING, PAUSED }
 
 // ------------------------------------------------------------------ new message
 

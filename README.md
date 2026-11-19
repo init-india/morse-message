@@ -13,11 +13,11 @@ The latest test build is on the [Releases page](https://github.com/init-india/mo
 Install `MorseMessage-*-fdroid-debug.apk` on an Android 10+ phone (allow installing from unknown sources).
 GitHub Actions rebuilds it on every push to `main` (see `.github/workflows/build.yml`).
 
-## Features (v0.7)
+## Features (v0.8)
 
 | Tab | What it does |
 |---|---|
-| **Messages** | Full SMS app: conversation list, chats, new message (type a number or pick a contact), notifications, unread state, retry failed sends, delete. Composer: text box → **·− / abc button** → **Send**. **Play** any Morse message as beep / flash / vibration / flashlight. |
+| **Messages** | Full SMS app: conversation list, chats, new message (type a number or pick a contact), notifications, unread state, retry failed sends, delete. Composer: text box → **·− / abc button** → **Send**. One button per Morse message: **▶ Play → ⏸ Pause → ▶ Resume** (beep / flash / vibration / flashlight). Playback stops on Back, leaving the chat, switching tabs or leaving the app. |
 | **Translate** | Text → Morse and Morse → text. Plays as **sound, vibration, flashlight, full-screen flash** (any mix), highlighting each letter. Copy or send to other apps (SMS, WhatsApp, email…). |
 | **Key** | Type in Morse with **dot/dash buttons** or a **straight key** (hold = dash, tap = dot). Live sidetone, decoded text, play back, send. |
 | **Learn** | Tap-to-hear alphabet, numbers, punctuation, prosigns. **Koch-method practice** with scoring. Articles: timing, how to learn, history, uses, abbreviations, SOS. |
@@ -66,6 +66,8 @@ and messages that mix Morse with other languages. A message counts as Morse only
 Morse or has no English letters/digits, with at least two Morse letters, so "..." or "1/2" are never mistaken for Morse.
 
 ### Default SMS app: what it means
+- **If tapping "Set as default" does nothing**, Android refused without showing its dialog. The app then opens the
+  phone's Default apps screen and shows a Help dialog (with a diagnostics line to send to the developer).
 - **If Android refuses** (common for an APK installed from a file on Android 13+, "Restricted setting"): the app shows
   App info and Default apps buttons. Fix: App info → ⋮ → **Allow restricted settings**, then set it as default again.
   Installs from Google Play or F-Droid don't need this.
@@ -118,7 +120,7 @@ Requirements: a recent Android Studio (2025 or newer) or the Android SDK command
 4. Play reviews default-SMS apps closely. Expect a review video request showing the app set as default and sending/receiving.
 
 ### F-Droid
-1. Publish the source (GitHub, GitLab or Codeberg) and tag the release (e.g. `v0.7.0`).
+1. Publish the source (GitHub, GitLab or Codeberg) and tag the release (e.g. `v0.8.0`).
 2. `fastlane/metadata/android/en-US/` holds the title, descriptions and changelogs. Add screenshots to `images/phoneScreenshots/`.
 3. Fill in the placeholders in `fdroid/com.morsemessage.yml` and submit it to [fdroiddata](https://gitlab.com/fdroid/fdroiddata).
 

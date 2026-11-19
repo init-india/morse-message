@@ -27,14 +27,19 @@ import kotlin.math.roundToLong
 
 data class PlaybackState(
     val playing: Boolean = false,
-    /** What is being played, so screens can highlight the current character. */
+    /** Stopped part-way by pause(); resume() continues from the same letter. */
+    val paused: Boolean = false,
+    /** What is being played, so screens can highlight the current character / message. */
     val source: String = "",
     val sourceIsMorse: Boolean = false,
     val sourceIndex: Int = -1,
     /** True while a dot or dash is "on": drives the full-screen flash. */
     val signalOn: Boolean = false,
     val screenFlash: Boolean = false,
-)
+) {
+    /** True if [source] is playing or paused (used for the per-message Play / Pause button). */
+    fun isActive(source: String): Boolean = (playing || paused) && this.source == source
+}
 
 /**
  * Plays Morse through any combination of speaker, vibration, flashlight and screen.
@@ -42,12 +47,27 @@ data class PlaybackState(
  * Audio is rendered to PCM up-front and streamed (sample-accurate). Vibration is handed to the
  * vibrator as one waveform. Torch, screen and highlighting follow the same timeline, scheduled
  * against the monotonic clock so they never drift.
+ *
+ * Pause stops at the current dot/dash and remembers where; resume continues from there.
  */
 class MorsePlayer(context: Context) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var job: Job? = null
     @Volatile private var generation = 0L
+
+    /** Where playback is, so pause() knows where resume() must continue. */
+    @Volatile private var position = 0
+    @Volatile private var current: Playback? = null
+
+    private data class Playback(
+        val source: String,
+        val isMorse: Boolean,
+        val timeline: List<Segment>,
+        val toneHz: Int,
+        val outputs: Outputs,
+        val useTorch: Boolean,
+    )
 
     val torch = Torch(context)
     val haptics = Haptics(context)
@@ -74,39 +94,89 @@ class MorsePlayer(context: Context) {
         val speed = if (useTorch) requestedSpeed.cappedAt(AppSettings.FLASHLIGHT_MAX_WPM) else requestedSpeed
         val timeline = if (isMorse) MorseTiming.fromMorse(source, speed) else MorseTiming.fromText(source, speed)
         if (timeline.isEmpty()) return
+        current = Playback(source, isMorse, timeline, toneHz, outputs, useTorch)
+        start(from = 0)
+    }
 
-        val pcm = if (outputs.sound) ToneSynth.render(timeline, toneHz) else null
-        val vibration = if (outputs.vibrate) vibrationPattern(timeline) else null
+    /** Play / Pause / Resume for one message: the single button in each chat bubble. */
+    fun toggle(source: String, isMorse: Boolean, settings: AppSettings) {
+        val s = _state.value
+        when {
+            s.playing && s.source == source -> pause()
+            s.paused && s.source == source -> resume()
+            isMorse -> playMorse(source, settings)
+            else -> playText(source, settings)
+        }
+    }
+
+    fun pause() {
+        val p = current ?: return
+        if (!_state.value.playing) return
+        val at = position
+        generation++              // the cancelled job must not reset the state
+        job?.cancel()
+        job = null
+        _state.value = PlaybackState(
+            paused = true, source = p.source, sourceIsMorse = p.isMorse,
+            sourceIndex = _state.value.sourceIndex, screenFlash = false,
+        )
+        position = at
+    }
+
+    fun resume() {
+        if (!_state.value.paused || current == null) return
+        start(from = position)
+    }
+
+    /** Stops completely (also clears a paused message). */
+    fun stop() {
+        generation++
+        job?.cancel()
+        job = null
+        current = null
+        position = 0
+        if (_state.value.playing || _state.value.paused) _state.value = PlaybackState()
+    }
+
+    private fun start(from: Int) {
+        val p = current ?: return
+        val timeline = p.timeline.subList(from.coerceIn(0, p.timeline.size), p.timeline.size)
+        if (timeline.isEmpty()) {
+            stop()
+            return
+        }
+        val pcm = if (p.outputs.sound) ToneSynth.render(timeline, p.toneHz) else null
+        val vibration = if (p.outputs.vibrate) vibrationPattern(timeline) else null
 
         val myGeneration = ++generation
         _state.value = PlaybackState(
-            playing = true, source = source, sourceIsMorse = isMorse, screenFlash = outputs.screen,
+            playing = true, source = p.source, sourceIsMorse = p.isMorse, screenFlash = p.outputs.screen,
         )
 
         job = scope.launch {
             try {
                 val audioJob = pcm?.let { samples -> launch(Dispatchers.IO) { streamAudio(samples) } }
                 vibration?.let { haptics.playPattern(it) }
-                runTimeline(timeline, useTorch)
+                runTimeline(timeline, from, p.useTorch)
                 audioJob?.join()
+                if (generation == myGeneration) {
+                    current = null
+                    position = 0
+                }
             } finally {
-                if (useTorch) torch.set(false)
+                if (p.useTorch) torch.set(false)
                 if (vibration != null) haptics.cancel()
-                // A newer play() may already be running; only reset state if we are still current.
+                // A newer play()/pause()/stop() may already have set the state; only reset if still current.
                 if (generation == myGeneration) _state.value = PlaybackState()
             }
         }
     }
 
-    fun stop() {
-        job?.cancel()
-        job = null
-    }
-
-    private suspend fun runTimeline(timeline: List<Segment>, useTorch: Boolean) {
+    private suspend fun runTimeline(timeline: List<Segment>, offset: Int, useTorch: Boolean) {
         val t0 = SystemClock.elapsedRealtime()
         var elapsed = 0.0
-        for (seg in timeline) {
+        timeline.forEachIndexed { i, seg ->
+            position = offset + i
             _state.update {
                 it.copy(
                     signalOn = seg.on,
