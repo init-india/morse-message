@@ -46,4 +46,5 @@ After the merge, the app usually appears in F-Droid within a couple of days.
 ## Future releases
 1. Bump `versionCode` / `versionName` in `app/build.gradle.kts`.
 2. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`.
-3. Push a tag like `v1.0.0`. F-Droid's auto-update (`UpdateCheckMode: Tags`) picks it up; no new merge request needed.
+3. Push to `main`. GitHub Actions sees the new version and creates the release and tag `v<versionName>` itself.
+   F-Droid's auto-update (`UpdateCheckMode: Tags`) picks the tag up; no new merge request needed.
