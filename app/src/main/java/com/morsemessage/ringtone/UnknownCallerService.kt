@@ -11,7 +11,7 @@ import android.os.SystemClock
 import android.telecom.Call
 import android.telecom.CallScreeningService
 import android.telecom.CallScreeningService.CallResponse
-import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
 import com.morsemessage.app
 import com.morsemessage.data.AppSettings
 import com.morsemessage.morse.MorseTiming
@@ -58,8 +58,8 @@ object CallAnnouncer {
             MorseTiming.fromText(digits, settings.ringtoneSpeed), settings.toneHz,
             sampleRate = rate, volume = 0.9, leadInMs = 100.0, trailingMs = 1500.0,
         )
-        val telecom = context.getSystemService(TelecomManager::class.java)
-        thread = Thread({ play(pcm, rate, telecom) }, "call-announcer").apply { start() }
+        val telephony = context.getSystemService(TelephonyManager::class.java)
+        thread = Thread({ play(pcm, rate, telephony) }, "call-announcer").apply { start() }
     }
 
     fun stop() {
@@ -67,7 +67,7 @@ object CallAnnouncer {
         thread = null
     }
 
-    private fun play(pcm: ShortArray, rate: Int, telecom: TelecomManager?) {
+    private fun play(pcm: ShortArray, rate: Int, telephony: TelephonyManager?) {
         val track = AudioTrack.Builder()
             .setAudioAttributes(
                 AudioAttributes.Builder()
@@ -92,7 +92,7 @@ object CallAnnouncer {
             val start = SystemClock.elapsedRealtime()
             // Give Telecom a moment to enter the ringing state before we start checking it.
             Thread.sleep(500)
-            while (SystemClock.elapsedRealtime() - start < MAX_RING_MS && isRinging(telecom)) {
+            while (SystemClock.elapsedRealtime() - start < MAX_RING_MS && isRinging(telephony)) {
                 Thread.sleep(250)
             }
         } catch (_: InterruptedException) {
@@ -102,10 +102,11 @@ object CallAnnouncer {
         }
     }
 
-    @Suppress("MissingPermission") // checked before start()
-    private fun isRinging(telecom: TelecomManager?): Boolean =
+    /** Ringing = not yet answered or rejected. Needs READ_PHONE_STATE (checked before start()). */
+    @Suppress("MissingPermission", "DEPRECATION")
+    private fun isRinging(telephony: TelephonyManager?): Boolean =
         try {
-            telecom?.isRinging == true
+            telephony?.callState == TelephonyManager.CALL_STATE_RINGING
         } catch (_: SecurityException) {
             false
         }
