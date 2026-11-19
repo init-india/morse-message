@@ -1,0 +1,27 @@
+# Draft build recipe for the F-Droid data repository (gitlab.com/fdroid/fdroiddata, metadata/com.morsemessage.yml).
+# Replace the placeholders, then open a merge request there (or a "Request For Packaging" issue).
+Categories:
+  - Phone & SMS
+  - Science & Education
+License: GPL-3.0-or-later
+AuthorName: init-india
+SourceCode: https://github.com/init-india/morse-message
+IssueTracker: https://github.com/init-india/morse-message/issues
+
+AutoName: Morse Message
+
+RepoType: git
+Repo: https://github.com/init-india/morse-message.git
+
+Builds:
+  - versionName: 0.6.0
+    versionCode: 6
+    commit: v0.6.0
+    subdir: app
+    gradle:
+      - fdroid
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.6.0
+CurrentVersionCode: 6

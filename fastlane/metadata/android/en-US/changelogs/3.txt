@@ -1,0 +1,1 @@
+Renamed to Morse Message. Now a full SMS app: chats, send as Morse code or as it is, show a whole chat as plain text, play Morse messages. "Morse" option in the text menu of other apps.

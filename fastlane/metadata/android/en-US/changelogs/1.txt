@@ -1,0 +1,1 @@
+First release: text to Morse (sound, vibration, flashlight, screen), Morse decoding, caller-name ringtones, Morse keyer, sharing, Koch practice and study material.

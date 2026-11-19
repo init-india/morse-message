@@ -1,0 +1,27 @@
+Morse Message is a text-messaging (SMS) app with Morse code built in.
+
+<b>Messages</b>
+<ul>
+<li>Set it as your default SMS app and chat as usual</li>
+<li>One <b>morse / abc</b> button next to Send. In morse mode a Morse keypad replaces the keyboard, your text is converted, messages go out in Morse and all chats are shown in Morse. In abc mode you type normally and every chat is in plain language</li>
+<li>Only English letters and numbers become Morse; Tamil, Hindi, Chinese and every other language are sent as typed</li>
+<li>Play any Morse message as beeps, screen flashes, vibration or flashlight</li>
+<li>Contact names always stay as saved in your contacts</li>
+</ul>
+
+<b>Morse in any app</b>
+Select text in WhatsApp, Gmail or any app and tap "Morse" in the text menu to convert it, or to read a Morse message you received.
+
+<b>Translate and play</b>
+Turn any text into Morse and play it as sound, vibration, flashlight or full-screen flashes. Decode Morse back into text.
+
+<b>Type in Morse</b>
+Dot and dash buttons, or a straight key that times your taps, with a live sidetone.
+
+<b>Morse ringtone for calls</b>
+One switch: contacts ring with their name in Morse, unknown numbers with the number. Turn it off, or uninstall, and your normal ringtone comes back.
+
+<b>Learn</b>
+Tap-to-hear alphabet, numbers and prosigns, Koch-method practice lessons, timing rules, history and real-world uses. Speed 5–40 WPM with Farnsworth spacing.
+
+Not yet supported: picture and group messages (MMS). No ads, no tracking, no internet permission.

@@ -1,0 +1,1 @@
+The morse / abc button: morse mode swaps in a Morse keypad and converts your text, and abc brings back the normal keyboard and text. All chats switch with it.

@@ -1,0 +1,1 @@
+Morse keypad: new "⌨ English" key. Type English with the phone keyboard while in morse mode, and each word turns into Morse as you go.

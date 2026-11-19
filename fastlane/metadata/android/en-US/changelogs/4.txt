@@ -1,0 +1,1 @@
+One Morse/Normal toggle next to Send: it sets how messages are sent and how all chats are shown. Only English becomes Morse; other languages are sent as typed.

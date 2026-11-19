@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "dot dash dot" mark centred in the 108dp adaptive-icon canvas (safe zone 66dp) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/launcher_foreground"
+        android:pathData="M29,54a5,5 0,1 1,10 0a5,5 0,1 1,-10 0z" />
+    <path
+        android:fillColor="@color/launcher_foreground"
+        android:pathData="M49,49h10a5,5 0,0 1,0 10h-10a5,5 0,0 1,0 -10z" />
+    <path
+        android:fillColor="@color/launcher_foreground"
+        android:pathData="M69,54a5,5 0,1 1,10 0a5,5 0,1 1,-10 0z" />
+</vector>

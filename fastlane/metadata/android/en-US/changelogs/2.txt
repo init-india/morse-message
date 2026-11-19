@@ -1,0 +1,1 @@
+Learning-focused: removed SOS button. Morse ringtone for calls is now one switch in Settings: contacts ring with their name, unknown numbers with the number. Turning it off or uninstalling brings back the phone ringtone.
