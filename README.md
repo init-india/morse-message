@@ -13,7 +13,7 @@ The latest test build is on the [Releases page](https://github.com/init-india/mo
 Install `MorseMessage-*-fdroid-debug.apk` on an Android 10+ phone (allow installing from unknown sources).
 GitHub Actions rebuilds it on every push to `main` (see `.github/workflows/build.yml`).
 
-## Features (v0.6)
+## Features (v0.7)
 
 | Tab | What it does |
 |---|---|
@@ -34,14 +34,20 @@ The same button is in the Messages top bar. The mode is saved until it is tapped
 
 | | Keyboard | What's in the box when you tap | Sending | Showing chats, chat list, notifications |
 |---|---|---|---|---|
-| **·− morse** | Phone keyboard hidden; **Morse keypad**: `·` `−` `next letter` `next word /` `⌨ English` `⌫` | Converted to Morse | Delivered as Morse (English letters/numbers only; other languages as typed) | All messages in Morse (English parts) |
+| **·− morse** | Phone keyboard hidden; **Morse keypad**: `·` `−` `next letter` `next word /` `⌫` `⌨ Type English` `📋 Paste` | Converted to Morse | Delivered as Morse (English letters/numbers only; other languages as typed) | All messages in Morse (English parts) |
 | **abc** | Phone's normal keyboard | Turned back into text (your exact words if you didn't edit) | Sent exactly as typed, any language | All messages in normal language |
 
 While keying Morse, a line above the box shows what it says (e.g. `→ HI`).
 
+**Live translation bar:** in morse mode a bar above the box shows what your Morse says while you key it,
+including the letter in progress ("?" while the dots/dashes aren't a letter yet).
+
+**Fixing mistakes:** the box stays editable in morse mode. Tap anywhere to move the cursor; the keypad types and
+⌫ deletes at the cursor. Long-press to select or paste; the keypad also has a **📋 Paste** key.
+
 **Typing English in morse mode:** tap **⌨ English** on the Morse keypad. The phone keyboard opens while you stay
 in morse mode, and chats stay in Morse. Each English word turns into Morse as soon as you type a space; other languages
-stay as typed. Tap **·− keypad** to go back to keying, or just press Send: any last word is converted too.
+stay as typed. Tap the **·− Morse keypad** button to go back to keying, or just press Send: any last word is converted too.
 
 Contact names always appear as saved in the contact list. They are never converted.
 
@@ -60,6 +66,9 @@ and messages that mix Morse with other languages. A message counts as Morse only
 Morse or has no English letters/digits, with at least two Morse letters, so "..." or "1/2" are never mistaken for Morse.
 
 ### Default SMS app: what it means
+- **If Android refuses** (common for an APK installed from a file on Android 13+, "Restricted setting"): the app shows
+  App info and Default apps buttons. Fix: App info → ⋮ → **Allow restricted settings**, then set it as default again.
+  Installs from Google Play or F-Droid don't need this.
 - Android grants SMS permissions together with the "SMS app" role, which the user approves once (Messages tab or Settings).
 - Morse Message then receives every SMS, saves it in the phone's shared SMS database and notifies. It sends and saves
   sent messages, marks them failed if sending fails, and handles "reply with message" from the incoming-call screen.
@@ -109,7 +118,7 @@ Requirements: a recent Android Studio (2025 or newer) or the Android SDK command
 4. Play reviews default-SMS apps closely. Expect a review video request showing the app set as default and sending/receiving.
 
 ### F-Droid
-1. Publish the source (GitHub, GitLab or Codeberg) and tag the release (e.g. `v0.6.0`).
+1. Publish the source (GitHub, GitLab or Codeberg) and tag the release (e.g. `v0.7.0`).
 2. `fastlane/metadata/android/en-US/` holds the title, descriptions and changelogs. Add screenshots to `images/phoneScreenshots/`.
 3. Fill in the placeholders in `fdroid/com.morsemessage.yml` and submit it to [fdroiddata](https://gitlab.com/fdroid/fdroiddata).
 

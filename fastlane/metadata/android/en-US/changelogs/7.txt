@@ -1,0 +1,1 @@
+Morse mode: live English translation bar above the box; move the cursor to fix any letter, delete anywhere, paste (long-press or Paste key); clear "Morse keypad" button; help when Android refuses to set the default SMS app.

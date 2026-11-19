@@ -69,7 +69,19 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.PlatformTextInputInterceptor
+import androidx.compose.ui.platform.PlatformTextInputMethodRequest
+import androidx.compose.ui.platform.PlatformTextInputSession
+import com.morsemessage.morse.MorseEditing
+import com.morsemessage.morse.MorseKey
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -130,20 +142,23 @@ fun MessagesScreen(nav: MessagesNav) {
     val roleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         isDefault = repo.isDefaultSmsApp()
     }
-    val askDefault: () -> Unit = { repo.requestDefaultIntent()?.let { roleLauncher.launch(it) } }
+    val context = LocalContext.current
+    val askDefault: () -> Unit = {
+        repo.requestDefaultIntent()?.let { roleLauncher.launch(it) } ?: openDefaultApps(context)
+    }
 
     val address = nav.openAddress
     when {
         address != null -> ThreadScreen(address, nav.draft, isDefault, askDefault, onBack = { nav.close() })
         nav.composingNew -> NewMessageScreen(onStart = { nav.open(it, nav.draft) }, onBack = { nav.close() })
-        else -> ConversationList(isDefault, askDefault, onOpen = { nav.open(it) }, onNew = { nav.newMessage() })
+        else -> ConversationList(isDefault, { isDefault = it }, onOpen = { nav.open(it) }, onNew = { nav.newMessage() })
     }
 }
 
 // ------------------------------------------------------------------ conversation list
 
 @Composable
-private fun ConversationList(isDefault: Boolean, askDefault: () -> Unit, onOpen: (String) -> Unit, onNew: () -> Unit) {
+private fun ConversationList(isDefault: Boolean, onDefaultChanged: (Boolean) -> Unit, onOpen: (String) -> Unit, onNew: () -> Unit) {
     val context = LocalContext.current
     val repo = context.app.sms
     var conversations by remember { mutableStateOf<List<Conversation>>(emptyList()) }
@@ -164,12 +179,7 @@ private fun ConversationList(isDefault: Boolean, askDefault: () -> Unit, onOpen:
         LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
             if (!isDefault) item {
                 SectionCard("Make Morse Message your messaging app", Modifier.padding(16.dp)) {
-                    Text(
-                        "To send and receive text messages here, set Morse Message as your default SMS app. " +
-                            "You can switch back any time in your phone's settings.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Button(onClick = askDefault) { Text("Set as default") }
+                    DefaultSmsSetup(onChanged = onDefaultChanged)
                 }
             }
             if (isDefault && !contactsAllowed) item {
@@ -372,9 +382,15 @@ private fun Bubble(
 
 /**
  * Text box, then the morse / abc button, then Send, like a normal messaging app.
- * In morse mode the phone keyboard is hidden and the Morse keypad below is used instead;
- * in abc mode the phone's normal keyboard is used.
+ *
+ * - abc mode: the phone's normal keyboard.
+ * - morse mode: the phone keyboard is kept away and the Morse keypad below types into the box.
+ *   The box stays fully editable: tap to move the cursor, long-press to select / paste, scroll.
+ *   "Type English" brings back the phone keyboard (words turn into Morse as you type) and the
+ *   "Morse keypad" button returns to the keypad.
+ * - In morse mode a live translation bar above the box shows what the Morse says while typing.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun Composer(
     text: String,
@@ -386,39 +402,49 @@ private fun Composer(
     onSend: () -> Unit,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+    val clipboard = LocalClipboardManager.current
     val focus = remember { FocusRequester() }
-    var toggledHere by remember { mutableStateOf(false) }
-    // Morse mode only: the "⌨ English" key brings up the phone keyboard to type English,
-    // and each word is turned into Morse as soon as a space is typed.
-    var typingEnglish by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
+    var userSwitched by remember { mutableStateOf(false) }
+    var typingEnglish by remember { mutableStateOf(false) }
+    LaunchedEffect(morseMode) { if (!morseMode) typingEnglish = false }
 
-    // Text + cursor of the box, so the cursor stays at the end after a word is converted.
+    // Text + cursor/selection of the box.
     var field by remember { mutableStateOf(TextFieldValue(text, TextRange(text.length))) }
     LaunchedEffect(text) {
         if (text != field.text) field = TextFieldValue(text, TextRange(text.length))
     }
+    fun setField(v: TextFieldValue) {
+        field = v
+        if (v.text != text) onText(v.text)
+    }
 
-    // Swap keyboards when the mode changes: Morse keypad <-> phone keyboard.
-    LaunchedEffect(morseMode) {
-        if (morseMode) keyboard?.hide()
-        else {
-            typingEnglish = false
-            if (toggledHere) {
-                focus.requestFocus()
-                keyboard?.show()
+    // Keep the phone keyboard away while the Morse keypad is in use, without making the box
+    // read-only (so the cursor, selection, scrolling and paste still work).
+    val keypadActive = morseMode && !typingEnglish
+    val blockKeyboard by rememberUpdatedState(keypadActive)
+    val interceptor = remember {
+        object : PlatformTextInputInterceptor {
+            override suspend fun interceptStartInputMethod(
+                request: PlatformTextInputMethodRequest,
+                nextHandler: PlatformTextInputSession,
+            ): Nothing {
+                if (blockKeyboard) awaitCancellation()
+                nextHandler.startInputMethod(request)
             }
         }
     }
-    LaunchedEffect(typingEnglish) {
-        if (typingEnglish) {
-            focus.requestFocus()
-            keyboard?.show()
-        } else if (morseMode) keyboard?.hide()
+    // When the user switches keyboards, restart the text input so the right one appears.
+    LaunchedEffect(keypadActive) {
+        if (!userSwitched) return@LaunchedEffect
+        focusManager.clearFocus()
+        delay(50)
+        focus.requestFocus()
+        if (keypadActive) keyboard?.hide() else keyboard?.show()
     }
 
-    val converted = remember(text) { MorseCode.toMorse(text) }
-    val hasMorse = MorseCode.morseOnly(converted).isNotBlank()
+    val live = remember(text) { MorseEditing.liveTranslation(text) }
     val hasForeign = text.split(Regex("\\s+")).any { MorseCode.isForeignWord(it) }
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -428,49 +454,67 @@ private fun Composer(
                 TextButton(onClick = askDefault) { Text("Set default") }
             }
         }
-        // Morse mode: show what the keyed Morse says, so the user can check it before sending.
-        if (morseMode && hasMorse) {
-            Text(
-                "→ " + MorseCode.decode(converted),
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 2, overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (morseMode && hasForeign) {
-            Text(
-                "Only English letters and numbers become Morse. Other languages are sent as typed.",
-                style = MaterialTheme.typography.labelSmall,
-            )
+        // Live translation bar: what the Morse in the box says, updated with every key.
+        if (morseMode) {
+            Surface(
+                color = MaterialTheme.colorScheme.tertiaryContainer,
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Reads:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.padding(end = 8.dp),
+                    )
+                    Text(
+                        live.ifEmpty { "your Morse appears here in English as you type" },
+                        style = if (live.isEmpty()) MaterialTheme.typography.bodySmall else MaterialTheme.typography.titleMedium,
+                        fontWeight = if (live.isEmpty()) FontWeight.Normal else FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                        maxLines = 3, overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            if (hasForeign) {
+                Text(
+                    "Only English letters and numbers become Morse. Other languages are sent as typed.",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = field,
-                onValueChange = { v ->
-                    val newText = if (morseMode && typingEnglish) MessageText.convertOnSpace(field.text, v.text) else v.text
-                    field = if (newText != v.text) TextFieldValue(newText, TextRange(newText.length)) else v
-                    onText(newText)
-                },
-                placeholder = {
-                    Text(
-                        when {
-                            !morseMode -> "Message"
-                            typingEnglish -> "Type English: each word becomes Morse"
-                            else -> "Key Morse below"
-                        }
-                    )
-                },
-                maxLines = 5,
-                // Morse mode: no phone keyboard (the keypad below types into this box),
-                // unless the user chose "⌨ English".
-                readOnly = morseMode && !typingEnglish,
-                textStyle = if (morseMode) MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace)
-                else MaterialTheme.typography.bodyLarge,
-                visualTransformation = if (morseMode) MorseSymbols else VisualTransformation.None,
-                modifier = Modifier.weight(1f).focusRequester(focus),
-            )
+            Box(Modifier.weight(1f)) {
+              InterceptPlatformTextInput(interceptor) {
+                OutlinedTextField(
+                    value = field,
+                    onValueChange = { v ->
+                        if (morseMode && typingEnglish) {
+                            val newText = MessageText.convertOnSpace(field.text, v.text)
+                            setField(if (newText != v.text) TextFieldValue(newText, TextRange(newText.length)) else v)
+                        } else setField(v)
+                    },
+                    placeholder = {
+                        Text(
+                            when {
+                                !morseMode -> "Message"
+                                typingEnglish -> "Type English: each word becomes Morse"
+                                else -> "Key Morse below"
+                            }
+                        )
+                    },
+                    maxLines = 5,
+                    textStyle = if (morseMode) MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace)
+                    else MaterialTheme.typography.bodyLarge,
+                    visualTransformation = if (morseMode) MorseSymbols else VisualTransformation.None,
+                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                )
+              }
+            }
             MorseToggle(
                 morseMode,
-                { toggledHere = true; onToggle() },
+                { userSwitched = true; onToggle() },
                 Modifier.padding(start = 6.dp),
             )
             IconButton(onClick = onSend, enabled = enabled && text.isNotBlank()) {
@@ -478,50 +522,43 @@ private fun Composer(
             }
         }
         if (morseMode && typingEnglish) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     "Typing English. Each word turns into Morse after a space.",
                     Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
                 )
-                TextButton(onClick = {
+                Button(onClick = {
                     // Convert any last word that hasn't been followed by a space yet.
-                    onText(MessageText.draftToMorse(text))
+                    val converted = MessageText.draftToMorse(text)
+                    setField(TextFieldValue(converted, TextRange(converted.length)))
+                    userSwitched = true
                     typingEnglish = false
-                }) { Text("·− keypad") }
+                }) { Text("·− Morse keypad") }
             }
         } else if (morseMode) {
             MorseKeypad(
                 onKey = { key ->
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    if (key == MorseKey.ENGLISH) typingEnglish = true
-                    else onText(MorseKeys.apply(text, key))
+                    val e = MorseEditing.apply(field.text, field.selection.start, field.selection.end, key)
+                    setField(TextFieldValue(e.text, TextRange(e.cursor)))
+                },
+                onTypeEnglish = {
+                    userSwitched = true
+                    typingEnglish = true
+                },
+                onPaste = {
+                    clipboard.getText()?.text?.takeIf { it.isNotEmpty() }?.let { pasted ->
+                        val e = MorseEditing.paste(field.text, field.selection.start, field.selection.end, pasted)
+                        setField(TextFieldValue(e.text, TextRange(e.cursor)))
+                    }
                 },
             )
         }
     }
 }
 
-/** Keys of the in-app Morse keyboard. */
-private enum class MorseKey { DOT, DASH, LETTER, WORD, BACKSPACE, ENGLISH }
-
-private object MorseKeys {
-    fun apply(text: String, key: MorseKey): String = when (key) {
-        MorseKey.DOT -> text + "."
-        MorseKey.DASH -> text + "-"
-        // Next letter: a single space between letters.
-        MorseKey.LETTER -> if (text.isBlank() || text.endsWith(" ")) text else "$text "
-        // Next word: " / " between words.
-        MorseKey.WORD -> if (text.isBlank() || text.trimEnd().endsWith("/")) text else text.trimEnd() + " / "
-        MorseKey.BACKSPACE -> when {
-            text.endsWith(" / ") -> text.dropLast(3)
-            else -> text.dropLast(1)
-        }
-        MorseKey.ENGLISH -> text // handled by the composer: opens the phone keyboard
-    }
-}
-
 @Composable
-private fun MorseKeypad(onKey: (MorseKey) -> Unit) {
+private fun MorseKeypad(onKey: (MorseKey) -> Unit, onTypeEnglish: () -> Unit, onPaste: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 4.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             KeypadButton("·", Modifier.weight(1f), big = true) { onKey(MorseKey.DOT) }
@@ -530,9 +567,16 @@ private fun MorseKeypad(onKey: (MorseKey) -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             KeypadButton("next letter", Modifier.weight(1.2f)) { onKey(MorseKey.LETTER) }
             KeypadButton("next word /", Modifier.weight(1.2f)) { onKey(MorseKey.WORD) }
-            KeypadButton("⌨ English", Modifier.weight(1.2f)) { onKey(MorseKey.ENGLISH) }
-            KeypadButton("⌫", Modifier.weight(0.7f)) { onKey(MorseKey.BACKSPACE) }
+            KeypadButton("⌫", Modifier.weight(0.8f)) { onKey(MorseKey.BACKSPACE) }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            KeypadButton("⌨ Type English", Modifier.weight(1.3f), onClick = onTypeEnglish)
+            KeypadButton("📋 Paste", Modifier.weight(1f), onClick = onPaste)
+        }
+        Text(
+            "Tip: tap in the box to move the cursor and fix any letter; ⌫ deletes before the cursor.",
+            style = MaterialTheme.typography.labelSmall,
+        )
     }
 }
 

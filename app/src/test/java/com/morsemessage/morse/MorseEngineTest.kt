@@ -140,4 +140,28 @@ class MorseEngineTest {
         assertEquals("hello wor", MessageText.convertOnSpace("hello word", "hello wor")) // deleting
         assertEquals("HI YOU", MorseCode.decode(MorseCode.toMorse(".... .. / you")))  // Send converts the last word
     }
+
+    @Test fun keypadEditsAtTheCursor() {
+        // ".... .." with cursor after the first letter: fix H -> add a dot there
+        assertEquals(Edit("..... ..", 5), MorseEditing.apply(".... ..", 4, 4, MorseKey.DOT))
+        // backspace in the middle deletes before the cursor
+        assertEquals(Edit("... ..", 3), MorseEditing.apply(".... ..", 4, 4, MorseKey.BACKSPACE))
+        // backspace removes a whole word gap
+        assertEquals(Edit(".... ..", 7), MorseEditing.apply(".... .. / ", 10, 10, MorseKey.BACKSPACE))
+        // selection is deleted
+        assertEquals(Edit(" ..", 0), MorseEditing.apply(".... ..", 0, 4, MorseKey.BACKSPACE))
+        // no double spaces / gaps
+        assertEquals(Edit(".- ", 3), MorseEditing.apply(".- ", 3, 3, MorseKey.LETTER))
+        assertEquals(Edit(".- / ", 5), MorseEditing.apply(".-", 2, 2, MorseKey.WORD))
+        assertEquals(Edit(".- / ", 5), MorseEditing.apply(".- / ", 5, 5, MorseKey.WORD))
+        // paste at the cursor
+        assertEquals(Edit(".- ... ---", 7), MorseEditing.paste(".- ---", 3, 3, "... "))
+    }
+
+    @Test fun liveTranslationShowsLetterBeingKeyed() {
+        assertEquals("HI", MorseEditing.liveTranslation(".... .."))
+        assertEquals("HE?", MorseEditing.liveTranslation(".... . .........."))
+        assertEquals("", MorseEditing.liveTranslation(""))
+        assertEquals("HI THERE", MorseEditing.liveTranslation(".... .. / there"))
+    }
 }

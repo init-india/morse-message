@@ -106,11 +106,7 @@ private fun DefaultSmsCard() {
                 style = MaterialTheme.typography.bodySmall,
             )
         } else {
-            Text(
-                "Set Morse Message as your default SMS app to send and receive messages in Morse.",
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            OutlinedButton(onClick = { repo.requestDefaultIntent()?.let { launcher.launch(it) } }) { Text("Set as default") }
+            DefaultSmsSetup(onChanged = { isDefault = it })
         }
         Text(
             "Picture and group messages (MMS) are not supported yet.",
