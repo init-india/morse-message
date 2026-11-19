@@ -29,6 +29,10 @@ jobs:
       - name: Build APKs
         run: ./gradlew assembleFdroidDebug assemblePlayDebug --stacktrace
 
+      # F-Droid builds the unsigned, minified release variant: make sure it builds too.
+      - name: Build F-Droid release variant (as F-Droid will)
+        run: ./gradlew assembleFdroidRelease --stacktrace
+
       - name: Collect APKs
         run: |
           VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
@@ -53,7 +57,7 @@ jobs:
             --prerelease \
             --target "$GITHUB_SHA" \
             --title "Latest build (${GITHUB_SHA::7})" \
-            --notes "Automatic debug build of the latest commit on main, for testing. Install MorseMessage-*-fdroid-debug.apk on an Android 10+ phone (allow installing from unknown sources). Debug builds install as a separate app (package com.morsemessage.debug)."
+            --notes "Automatic debug build of the latest commit on main, for testing. Install MorseMessage-*-fdroid-debug.apk on an Android 10+ phone (allow installing from unknown sources). Debug builds install as a separate app (package io.github.init_india.morsemessage.debug)."
 
       # Tags like v0.6.0 get their own release.
       - name: Publish tagged release

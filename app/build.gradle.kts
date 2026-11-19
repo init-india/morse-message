@@ -5,15 +5,16 @@ plugins {
 }
 
 android {
+    // Code package (namespace) stays com.morsemessage; the published app ID is below.
     namespace = "com.morsemessage"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.morsemessage"
+        applicationId = "io.github.init_india.morsemessage"
         minSdk = 29          // Android 10+: needed for scoped MediaStore ringtone storage
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.8.0"
+        versionCode = 9
+        versionName = "0.9.0"
     }
 
     // Two distribution channels built from the same 100% FOSS source.

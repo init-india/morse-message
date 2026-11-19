@@ -7,13 +7,15 @@ vibration, a Morse key, lessons, and caller-name ringtones in Morse.
 Free and open source (GPL-3.0-or-later), with no Google Play Services, ads, trackers or internet permission.
 The same code ships on **Google Play** and **F-Droid**.
 
+**App ID:** `io.github.init_india.morsemessage`
+
 ## Download
 
 The latest test build is on the [Releases page](https://github.com/init-india/morse-message/releases/tag/latest-build).
 Install `MorseMessage-*-fdroid-debug.apk` on an Android 10+ phone (allow installing from unknown sources).
 GitHub Actions rebuilds it on every push to `main` (see `.github/workflows/build.yml`).
 
-## Features (v0.8)
+## Features (v0.9)
 
 | Tab | What it does |
 |---|---|
@@ -120,9 +122,9 @@ Requirements: a recent Android Studio (2025 or newer) or the Android SDK command
 4. Play reviews default-SMS apps closely. Expect a review video request showing the app set as default and sending/receiving.
 
 ### F-Droid
-1. Publish the source (GitHub, GitLab or Codeberg) and tag the release (e.g. `v0.8.0`).
+1. Publish the source (GitHub, GitLab or Codeberg) and tag the release (e.g. `v0.9.0`).
 2. `fastlane/metadata/android/en-US/` holds the title, descriptions and changelogs. Add screenshots to `images/phoneScreenshots/`.
-3. Fill in the placeholders in `fdroid/com.morsemessage.yml` and submit it to [fdroiddata](https://gitlab.com/fdroid/fdroiddata).
+3. Follow [`fdroid/SUBMITTING.md`](fdroid/SUBMITTING.md): the recipe `fdroid/io.github.init_india.morsemessage.yml` is ready to submit to [fdroiddata](https://gitlab.com/fdroid/fdroiddata).
 
 ## Project layout
 

@@ -1,0 +1,1 @@
+Permanent app ID io.github.init_india.morsemessage, ready for F-Droid. Includes everything from 0.8: Play/Pause per message, stop on back, help for setting as default SMS app.
