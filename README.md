@@ -15,7 +15,7 @@ The latest test build is on the [Releases page](https://github.com/init-india/mo
 Install `MorseMessage-*-fdroid-debug.apk` on an Android 10+ phone (allow installing from unknown sources).
 GitHub Actions rebuilds it on every push to `main` (see `.github/workflows/build.yml`).
 
-## Features (v0.9)
+## Features (v0.9.1)
 
 | Tab | What it does |
 |---|---|
@@ -122,7 +122,7 @@ Requirements: a recent Android Studio (2025 or newer) or the Android SDK command
 4. Play reviews default-SMS apps closely. Expect a review video request showing the app set as default and sending/receiving.
 
 ### F-Droid
-1. Bump the version in `app/build.gradle.kts` and push to `main`: GitHub Actions creates the release and its tag (e.g. `v0.9.0`) automatically.
+1. Bump the version in `app/build.gradle.kts` and push to `main`: GitHub Actions creates the release and its tag (e.g. `v0.9.1`) automatically.
 2. `fastlane/metadata/android/en-US/` holds the title, descriptions and changelogs. Add screenshots to `images/phoneScreenshots/`.
 3. Follow [`fdroid/SUBMITTING.md`](fdroid/SUBMITTING.md): the recipe `fdroid/io.github.init_india.morsemessage.yml` is ready to submit to [fdroiddata](https://gitlab.com/fdroid/fdroiddata).
 

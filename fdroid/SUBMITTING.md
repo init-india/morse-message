@@ -2,25 +2,22 @@
 
 App ID: `io.github.init_india.morsemessage` · Recipe: [`io.github.init_india.morsemessage.yml`](io.github.init_india.morsemessage.yml)
 
-F-Droid builds the app itself from this GitHub repository (the `fdroid` flavour, release build, tag `v0.9.0`),
+F-Droid builds the app itself from this GitHub repository (the `fdroid` flavour, release build, tag `v0.9.1`),
 signs it with F-Droid's key and publishes it. Nothing is uploaded by us except the recipe.
 
 ## Already done in this repository
 - [x] GPL-3.0 licence, public source, only free libraries (AndroidX / Jetpack Compose; no Google Play Services, Firebase, ads or trackers)
-- [x] Store text: `fastlane/metadata/android/en-US/` (title, short and full description, changelogs, 512 px icon)
-- [x] Version tag `v0.9.0` (versionCode 9) and a release build that GitHub Actions checks on every push
+- [x] Store text and images: `fastlane/metadata/android/en-US/` (title, descriptions, changelogs, 512 px icon,
+      1024×500 feature graphic, 5 phone screenshots). The same folder layout is used for Google Play.
+- [x] Version tag `v0.9.1` (versionCode 10) and a release build that GitHub Actions checks on every push
 - [x] Build recipe `fdroid/io.github.init_india.morsemessage.yml`
 
 ## Still to do (needs your accounts)
 
-### 1. Screenshots
-Take 2–4 phone screenshots (chat list, a chat in morse mode with the keypad, Translate, Learn).
-Add them as `fastlane/metadata/android/en-US/images/phoneScreenshots/1.png`, `2.png`, … and commit.
-
-### 2. GitLab account
+### 1. GitLab account
 Create a free account at https://gitlab.com (F-Droid's data lives there).
 
-### 3. Request for Packaging
+### 2. Request for Packaging
 Open a new issue at https://gitlab.com/fdroid/rfp/-/issues using its template. Suggested text:
 
 > **Morse Message**: an SMS app with Morse code built in.
@@ -30,16 +27,16 @@ Open a new issue at https://gitlab.com/fdroid/rfp/-/issues using its template. S
 > No proprietary dependencies. Fastlane metadata included. I am the developer (init-india).
 > Not yet supported: MMS (stated in the description).
 
-### 4. Merge request with the recipe
+### 3. Merge request with the recipe
 1. Open https://gitlab.com/fdroid/fdroiddata and click **Fork**.
 2. In your fork, create a branch named `io.github.init_india.morsemessage`.
 3. Add the file `metadata/io.github.init_india.morsemessage.yml` with the content of this repo's
    `fdroid/io.github.init_india.morsemessage.yml` (GitLab web editor: **+ → New file**).
 4. Commit with the message `New App: io.github.init_india.morsemessage`.
 5. Wait until the fork's CI pipeline is green (it runs `fdroid lint` and a test build).
-6. Open a **merge request** to `fdroid/fdroiddata`, and link the RFP issue from step 3.
+6. Open a **merge request** to `fdroid/fdroiddata`, and link the RFP issue from step 2.
 
-### 5. Review
+### 4. Review
 F-Droid volunteers review licence, build and anti-features and may ask questions in the merge request.
 After the merge, the app usually appears in F-Droid within a couple of days.
 
