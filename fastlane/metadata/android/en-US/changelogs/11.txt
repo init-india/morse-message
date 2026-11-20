@@ -1,0 +1,1 @@
+Store screenshots now use made-up demo conversations.

@@ -13,8 +13,8 @@ android {
         applicationId = "io.github.init_india.morsemessage"
         minSdk = 29          // Android 10+: needed for scoped MediaStore ringtone storage
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.9.1"
+        versionCode = 11
+        versionName = "0.9.2"
     }
 
     // Two distribution channels built from the same 100% FOSS source.
