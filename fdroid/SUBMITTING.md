@@ -40,6 +40,9 @@ Open a new issue at https://gitlab.com/fdroid/rfp/-/issues using its template. S
 F-Droid volunteers review licence, build and anti-features and may ask questions in the merge request.
 After the merge, the app usually appears in F-Droid within a couple of days.
 
+Note: F-Droid wants the full commit hash in `commit:` (not the tag name). v0.9.2 = `55f41b01cab7e5650ed12b7f35855bd3addf8628`.
+Reproducible builds are not enabled yet, so F-Droid signs the app with its own key.
+
 ## Future releases
 1. Bump `versionCode` / `versionName` in `app/build.gradle.kts`.
 2. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`.
