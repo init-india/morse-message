@@ -1,4 +1,7 @@
-"""Replace the real conversations in the two Messages screenshots with made-up demo chats."""
+"""Replace the real conversations in the two Messages screenshots with made-up demo chats.
+
+Inputs are the original phone screenshots (not kept in the repo, they contain private messages);
+outputs fastlane/.../phoneScreenshots/1.png (chats in Morse) and 2.png (chats in normal text)."""
 from PIL import Image, ImageDraw, ImageFont
 
 U = '/mnt/user-data/uploads/'

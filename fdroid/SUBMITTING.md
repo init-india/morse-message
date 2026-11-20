@@ -2,14 +2,14 @@
 
 App ID: `io.github.init_india.morsemessage` · Recipe: [`io.github.init_india.morsemessage.yml`](io.github.init_india.morsemessage.yml)
 
-F-Droid builds the app itself from this GitHub repository (the `fdroid` flavour, release build, tag `v0.9.1`),
+F-Droid builds the app itself from this GitHub repository (the `fdroid` flavour, release build, tag `v0.9.2`),
 signs it with F-Droid's key and publishes it. Nothing is uploaded by us except the recipe.
 
 ## Already done in this repository
 - [x] GPL-3.0 licence, public source, only free libraries (AndroidX / Jetpack Compose; no Google Play Services, Firebase, ads or trackers)
 - [x] Store text and images: `fastlane/metadata/android/en-US/` (title, descriptions, changelogs, 512 px icon,
-      1024×500 feature graphic, 5 phone screenshots). The same folder layout is used for Google Play.
-- [x] Version tag `v0.9.1` (versionCode 10) and a release build that GitHub Actions checks on every push
+      1024×500 feature graphic, 5 phone screenshots; the chat screenshots use made-up demo conversations). The same folder layout is used for Google Play.
+- [x] Version tag `v0.9.2` (versionCode 11) and a release build that GitHub Actions checks on every push
 - [x] Build recipe `fdroid/io.github.init_india.morsemessage.yml`
 
 ## Still to do (needs your accounts)
